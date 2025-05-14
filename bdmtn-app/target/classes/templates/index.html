@@ -1,0 +1,208 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Template • BDMTN</title>
+    <!-- Material Design 3 -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <style>
+        :root {
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .bdmtnapp {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .header h1 {
+            color: var(--md-sys-color-primary);
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .new-player {
+            width: 95%;
+            padding: 12px;
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .player-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .player-list li {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .toggle {
+            margin-right: 12px;
+        }
+
+        .destroy {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .filters {
+            display: flex;
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        .filters a {
+            color: var(--md-sys-color-primary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+
+        .filters a.selected {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .clear-completed {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<section class="bdmtnapp mdc-elevation--z2">
+    <header class="header">
+        <h1 class="mdc-typography--headline4">Who's Playing?</h1>
+        <form id="new-player-form" th:action="@{/players(sessionId=${sessionId})}" method="post" th:object="${player}">
+            <input id="new-player-input" class="new-player mdc-text-field__input" placeholder="Who's playing?" autofocus
+                   autocomplete="false"
+                   name="name"
+                   th:field="*{name}"
+                   hx-target="#player-list"
+                   hx-swap="beforeend"
+                   th:hx-post="@{/players(sessionId=${sessionId})}"
+                   hx-trigger="keyup[key=='Enter']">
+        </form>
+    </header>
+    <!-- This section should be hidden by default and shown when there are players -->
+    <section id="main-section" class="main" th:classappend="${totalNumberOfPlayers == 0?'hidden':''}">
+        <form th:action="@{/players/toggle-all(sessionId=${sessionId})}" th:method="put">
+            <div class="mdc-form-field">
+                <div class="mdc-checkbox">
+                    <input id="toggle-all" class="toggle-all mdc-checkbox__native-control" type="checkbox"
+                           onclick="this.form.submit()">
+                    <div class="mdc-checkbox__background">
+                        <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                            <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                        </svg>
+                    </div>
+                </div>
+                <label for="toggle-all" class="mdc-typography--body1">Check in all players</label>
+            </div>
+        </form>
+        <ul id="player-list" class="player-list mdc-list" th:remove="all-but-first">
+            <li th:insert="fragments :: player(${player}, ${sessionId})" th:each="player : ${players}" th:remove="tag">
+            </li>
+        </ul>
+    </section>
+    <!-- This footer should be hidden by default and shown when there are players -->
+    <footer id="main-footer" class="footer" th:classappend="${totalNumberOfPlayers == 0?'hidden':''}">
+        <span th:replace="fragments :: checkedin-players-count" class="mdc-typography--body2">
+        </span>
+        <ul class="filters mdc-list">
+            <li>
+                <a th:href="@{/players(sessionId=${sessionId})}"
+                   th:classappend="${filter.name() == 'ALL'?'selected':''}"
+                   class="mdc-button mdc-button--text">All</a>
+            </li>
+            <li>
+                <a th:href="@{/players/checked-in(sessionId=${sessionId})}"
+                   th:classappend="${filter.name() == 'CHECKED_IN'?'selected':''}"
+                   class="mdc-button mdc-button--text">Checked in</a>
+            </li>
+        </ul>
+        <form th:action="@{/players/checked-in(sessionId=${sessionId})}" th:method="delete"
+              th:if="${numberOfCheckedInPlayers > 0}">
+            <button class="clear-completed mdc-button mdc-button--raised">
+                <span class="mdc-button__ripple"></span>
+                <span class="mdc-button__label">Clear checked in</span>
+            </button>
+        </form>
+    </footer>
+</section>
+<footer class="info mdc-typography--body2">
+    <p>Double-click to edit a todo</p>
+</footer>
+<!-- Scripts here. Don't remove ↓ -->
+<script th:src="@{/webjars/todomvc-common/base.js}"></script>
+<script type="text/javascript" th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+<script>
+    // Initialize Material Design components
+    mdc.checkbox.MDCCheckbox.attachTo(document.querySelector('.mdc-checkbox'));
+    mdc.ripple.MDCRipple.attachTo(document.querySelector('.mdc-button'));
+
+    htmx.on('#new-player-input', 'htmx:afterRequest', function (evt) {
+        evt.detail.elt.value = '';
+    });
+
+    htmx.on('htmx:afterSwap', function (evt) {
+        let players = document.querySelectorAll('#player-list li');
+        let mainSection = document.getElementById('main-section');
+        let mainFooter = document.getElementById('main-footer');
+
+        if (players.length > 0) {
+            mainSection.classList.remove('hidden');
+            mainFooter.classList.remove('hidden');
+        } else {
+            mainSection.classList.add('hidden');
+            mainFooter.classList.add('hidden');
+        }
+    });
+
+    document.getElementById('new-player-form').addEventListener('submit', function (evt) {
+        evt.preventDefault();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<!--/*@thymesVar id="session" type="dev.martynswift.bdmtn.session.BdmtnSession"*/-->
+<!--/*@thymesVar id="sessionId" type="java.lang.String"*/-->
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Play • BDMTN</title>
+    <!-- Material Design 3 -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <style>
+        .court-container {
+            display: flex;
+            overflow-x: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        .court-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        .court-section {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .court-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--md-sys-color-outline);
+            background: var(--md-sys-color-surface);
+        }
+        .court-number {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--md-sys-color-primary);
+        }
+        .court-content {
+            flex: 1;
+            padding: 20px;
+            background: var(--md-sys-color-surface-container);
+            position: relative;
+            overflow: hidden;
+        }
+        .court-surface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #008080;
+            margin: 20px;
+            border-radius: 8px;
+        }
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--md-sys-color-surface);
+            border-top: 1px solid var(--md-sys-color-outline);
+        }
+        .tab-bar .mdc-tab {
+            flex: 1;
+            min-width: 0;
+        }
+        .tab-bar .mdc-tab__text-label {
+            font-size: 0.875rem;
+        }
+        .content {
+            padding-bottom: 48px; /* Height of tab bar */
+        }
+
+        @media (min-width: 768px) {
+            .court-container {
+                flex-wrap: wrap;
+                overflow-x: visible;
+            }
+            .court-section {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+            .tab-bar {
+                display: none;
+            }
+            .content {
+                padding-bottom: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .court-section {
+                flex: 0 0 33.333%;
+                max-width: 33.333%;
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .court-section {
+                flex: 0 0 25%;
+                max-width: 25%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="court-container">
+    <section th:each="court : ${courts}" 
+             th:id="'court-' + ${court.number}" 
+             class="court-section mdc-elevation--z2">
+        <header class="court-header">
+            <h1 class="court-number" th:text="'Court ' + ${court.number}">Court 1</h1>
+        </header>
+        <div class="court-content">
+            <div class="court-surface"></div>
+            <!-- Court content will go here -->
+        </div>
+    </section>
+</div>
+<nav class="tab-bar mdc-tab-bar" role="tablist">
+    <div class="mdc-tab-scroller">
+        <div class="mdc-tab-scroller__scroll-area">
+            <div class="mdc-tab-scroller__scroll-content">
+                <button th:each="court : ${courts}"
+                        class="mdc-tab"
+                        th:classappend="${court.number == 1 ? 'mdc-tab--active' : ''}"
+                        role="tab"
+                        th:aria-selected="${court.number == 1 ? 'true' : 'false'}"
+                        th:tabindex="${court.number == 1 ? '0' : '-1'}"
+                        th:id="'tab-' + ${court.number}">
+                    <span class="mdc-tab__content">
+                        <span class="mdc-tab__text-label" th:text="${court.number}">1</span>
+                    </span>
+                    <span class="mdc-tab-indicator" th:classappend="${court.number == 1 ? 'mdc-tab-indicator--active' : ''}">
+                        <span class="mdc-tab-indicator__content mdc-tab-indicator__content--underline"></span>
+                    </span>
+                    <span class="mdc-tab__ripple"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- Scripts here. Don't remove ↓ -->
+<script th:src="@{/webjars/todomvc-common/base.js}"></script>
+<script type="text/javascript" th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+<script>
+    // Initialize Material Design components
+    const tabBar = new mdc.tabBar.MDCTabBar(document.querySelector('.mdc-tab-bar'));
+    const courtContainer = document.querySelector('.court-container');
+    let currentIndex = 0;
+
+    // Handle tab clicks
+    tabBar.listen('MDCTabBar:activated', (event) => {
+        currentIndex = event.detail.index;
+        scrollToCourt(currentIndex);
+    });
+
+    // Handle swipe gestures
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    courtContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+
+    courtContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+
+        if (Math.abs(diff) < swipeThreshold) return;
+
+        if (diff > 0 && currentIndex < tabBar.tabs.length - 1) {
+            // Swipe left
+            currentIndex++;
+        } else if (diff < 0 && currentIndex > 0) {
+            // Swipe right
+            currentIndex--;
+        }
+
+        tabBar.activateTab(currentIndex);
+        scrollToCourt(currentIndex);
+    }
+
+    function scrollToCourt(index) {
+        const court = document.getElementById(`court-${index + 1}`);
+        if (court) {
+            courtContainer.scrollTo({
+                left: court.offsetLeft,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    // Handle scroll events to update active tab
+    courtContainer.addEventListener('scroll', () => {
+        const scrollLeft = courtContainer.scrollLeft;
+        const courtWidth = courtContainer.clientWidth;
+        const newIndex = Math.round(scrollLeft / courtWidth);
+        
+        if (newIndex !== currentIndex && newIndex >= 0 && newIndex < tabBar.tabs.length) {
+            currentIndex = newIndex;
+            tabBar.activateTab(currentIndex);
+        }
+    });
+</script>
+</body>
+</html> 

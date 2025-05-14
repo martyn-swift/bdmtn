@@ -1,0 +1,42 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<!--/*@thymesVar id="player" type="dev.martynswift.bdmtn.player.web.PlayerController.PlayerDto"*/-->
+<!--/*@thymesVar id="sessionId" type="java.lang.String"*/-->
+<li th:fragment="player(player, sessionId)" th:classappend="${player.checkedIn?'checked-in':''}" th:id="|list-item-${player.id}|">
+    <div class="view">
+        <div class="mdc-form-field">
+            <div class="mdc-checkbox">
+                <input th:id="|toggle-checkbox-${player.id}|" class="toggle mdc-checkbox__native-control" type="checkbox"
+                       th:attrappend="checked=${player.checkedIn?'true':null}"
+                       th:attr="hx-put=@{/players/{id}/toggle(sessionId=${sessionId},id=${player.id})},hx-target=|#list-item-${player.id}|"
+                       hx-trigger="click"
+                       hx-swap="outerHTML">
+                <div class="mdc-checkbox__background">
+                    <svg class="mdc-checkbox__checkmark" viewBox="0 0 24 24">
+                        <path class="mdc-checkbox__checkmark-path" fill="none" d="M1.73,12.91 8.1,19.28 22.79,4.59"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <label class="mdc-typography--body1" th:text="${player.name+player.id}">Taste JavaScript</label>
+        <button class="destroy mdc-icon-button material-icons"
+                th:attr="hx-delete=@{/players/{id}(sessionId=${sessionId},id=${player.id})},hx-target=|#list-item-${player.id}|"
+                hx-trigger="click"
+                hx-swap="outerHTML">delete</button>
+    </div>
+</li>
+<span th:fragment="checkedin-players-count"
+      id="checkedin-players-count"
+      class="mdc-typography--body2"
+      th:attr="hx-get=@{/players/checkedin-players-count(sessionId=${sessionId})}"
+      hx-swap="outerHTML"
+      hx-trigger="playerAdded from:body, playerCheckedInToggled from:body, playerDeleted from:body">
+        <th:block th:unless="${numberOfCheckedInPlayers == 1}">
+            <span><strong th:text="${numberOfCheckedInPlayers}">0</strong> players checked in</span>
+        </th:block>
+        <th:block th:if="${numberOfCheckedInPlayers == 1}">
+            <span><strong>1</strong> player</span>
+        </th:block>
+</span>
+</html>

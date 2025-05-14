@@ -1,0 +1,8 @@
+com/wimdeblauwe/examples/todomvchtmx/todoitem/TodoItemNotFoundException.class
+com/wimdeblauwe/examples/todomvchtmx/todoitem/web/TodoItemFormData.class
+com/wimdeblauwe/examples/todomvchtmx/todoitem/TodoItemRepository.class
+com/wimdeblauwe/examples/todomvchtmx/todoitem/web/TodoItemController.class
+com/wimdeblauwe/examples/todomvchtmx/todoitem/TodoItem.class
+com/wimdeblauwe/examples/todomvchtmx/todoitem/web/TodoItemController$ListFilter.class
+com/wimdeblauwe/examples/todomvchtmx/todoitem/web/TodoItemController$TodoItemDto.class
+com/wimdeblauwe/examples/todomvchtmx/TodomvcThymeleafHtmxApplication.class
